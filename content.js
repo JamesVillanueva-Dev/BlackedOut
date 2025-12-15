@@ -1,4 +1,16 @@
+let enabled = false; // off by default
+
+// Listen for toolbar toggle messages
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.action === "toggle") {
+    enabled = !enabled;
+    console.log("Text Blackout enabled:", enabled);
+  }
+});
+
 document.addEventListener("mouseup", function() {
+  if (!enabled) return; // ignore highlights when disabled
+
   const selection = window.getSelection();
   if (!selection.rangeCount) return;
 
@@ -7,17 +19,14 @@ document.addEventListener("mouseup", function() {
   if (text.length === 0) return;
 
   const parent = range.commonAncestorContainer.parentElement;
-
-  // Exclude interactive or non-text elements
   const excludeTags = ["A", "BUTTON", "INPUT", "TEXTAREA", "IMG"];
   if (excludeTags.includes(parent.tagName)) return;
 
-  // Wrap only the selected text in a span
   const span = document.createElement("span");
   span.style.color = "black";
   span.style.backgroundColor = "black";
   span.dataset.blackedOut = "true";
-  span.title = "Click to toggle blackout"; // tooltip
+  span.title = "Click to toggle blackout";
 
   try {
     range.surroundContents(span);
@@ -28,19 +37,18 @@ document.addEventListener("mouseup", function() {
 
   selection.removeAllRanges();
 
-  // Toggle blackout on click
   span.addEventListener("click", function(e) {
     e.stopPropagation();
     if (span.dataset.blackedOut === "true") {
       span.style.color = "";
       span.style.backgroundColor = "";
       span.dataset.blackedOut = "false";
-      span.title = ""; // remove tooltip when restored
+      span.title = "";
     } else {
       span.style.color = "black";
       span.style.backgroundColor = "black";
       span.dataset.blackedOut = "true";
-      span.title = "Click to toggle blackout"; // restore tooltip
+      span.title = "Click to toggle blackout";
     }
   });
 });
